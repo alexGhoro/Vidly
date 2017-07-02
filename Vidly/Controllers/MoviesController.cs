@@ -21,31 +21,46 @@ namespace Vidly.Controllers
     protected override void Dispose(bool disposing)
     {
       _context.Dispose();
-    }
-
-    public ActionResult Random()
-    {
-      var movie = new Movie() {Name = "Shrek!" };
-
-      var customers = new List<Customer>
-      {
-        new Customer {Name = "Customer 1"},
-        new Customer {Name = "Customer 2"}
-      };
-
-      var viewModel = new RandomMovieViewModel
-      {
-        Movie = movie,
-        Customers = customers
-      };
-
-      return View(viewModel);
-    }
+    }  
 
     public ViewResult Index()
     {
       var movies = _context.Movies.Include(m => m.Genre).ToList();
       return View(movies);    
+    }
+
+    public ActionResult New()
+    {
+      var genres = _context.Genres.ToList();
+      var viewModel = new MovieFormViewModel
+      {
+        Movie = new Movie
+        {
+          DateAdded = DateTime.Now
+        },
+        Genres = genres
+      };
+      return View("MovieForm", viewModel);
+    }
+
+    [HttpPost]
+    public ActionResult Save(Movie movie)
+    {
+      if (movie.Id == 0)
+      {
+        _context.Movies.Add(movie);
+      }
+      else
+      {
+        var movieInDb = _context.Movies.Single(c => c.Id == movie.Id);
+        movieInDb.Name = movie.Name;
+        movieInDb.ReleaseDate = movie.ReleaseDate;
+        movieInDb.DateAdded = movie.DateAdded;
+        movieInDb.Genre = movie.Genre;
+      }
+      _context.SaveChanges();
+
+      return RedirectToAction("Index", "Movies");
     }
 
     public ActionResult Details(int id)
